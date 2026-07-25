@@ -1,0 +1,294 @@
+---
+# GitHub Actions CI — pre-commit / pytest / pyright / docker build
+#
+# PR 作成・更新時と main/dev へのプッシュ時に、ローカルの pre-commit と
+# 同一のフックを実行する。
+#
+# ランナー: GitHub-hosted ubuntu-latest。
+# ツールチェーン (Python 3.12 / Node 22 / uv / shellcheck / actionlint /
+# gitleaks / hadolint / trivy / claude-code / opencode-ai / antigravity-cli)
+# は steps: で明示的にセットアップする。
+#
+# 出自: tarminjapan/AME-AI-Review-System の ci.yml から移植。
+# frontend(landing-page) 向けの vitest ステップは、本リポジトリに対象コードが
+# ないため除外した。hadolint / trivy のインストールステップと、
+# main/dev への push 時のみ実行する docker-build ジョブを新規追加している。
+
+name: CI
+
+"on":
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  pre-commit:
+    name: Static Analysis (pre-commit)
+    runs-on: ubuntu-latest
+
+    env:
+      UV_CACHE_DIR: ${{ github.workspace }}/.cache/uv
+      npm_config_cache: ${{ github.workspace }}/.cache/npm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ==========================================================================
+      # ツールチェーンセットアップ
+      # ==========================================================================
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-local-path: ${{ env.UV_CACHE_DIR }}
+          cache-dependency-glob: requirements-dev.txt
+
+      - name: Install shellcheck
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          FALLBACK="0.10.0"
+          API_RESPONSE=$(curl -sfH "Authorization: Bearer ${GH_TOKEN}" \
+            https://api.github.com/repos/koalaman/shellcheck/releases/latest || true)
+          VER=$(printf '%s' "$API_RESPONSE" | jq -e -r '.tag_name' 2>/dev/null || true)
+          if [ -z "$API_RESPONSE" ] || [ -z "$VER" ] || [ "$VER" = "null" ]; then
+            VER="$FALLBACK"
+            echo "shellcheck: using fallback ${FALLBACK}" >&2
+          fi
+          VER="${VER#v}"
+          echo "shellcheck version: ${VER}"
+          SC_BASE="https://github.com/koalaman/shellcheck/releases/download"
+          SC_URL="${SC_BASE}/v${VER}/shellcheck-v${VER}.linux.x86_64.tar.xz"
+          mkdir -p /tmp/sc
+          curl -sSfL "$SC_URL" | tar -xJ -C /tmp/sc
+          sudo mv "/tmp/sc/shellcheck-v${VER}/shellcheck" /usr/local/bin/
+          rm -rf /tmp/sc
+
+      - name: Install actionlint
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          FALLBACK="1.7.7"
+          API_RESPONSE=$(curl -sfH "Authorization: Bearer ${GH_TOKEN}" \
+            https://api.github.com/repos/rhysd/actionlint/releases/latest || true)
+          VER=$(printf '%s' "$API_RESPONSE" | jq -e -r '.tag_name' 2>/dev/null || true)
+          if [ -z "$API_RESPONSE" ] || [ -z "$VER" ] || [ "$VER" = "null" ]; then
+            VER="$FALLBACK"
+            echo "actionlint: using fallback ${FALLBACK}" >&2
+          fi
+          VER="${VER#v}"
+          echo "actionlint version: ${VER}"
+          AL_BASE="https://github.com/rhysd/actionlint/releases/download"
+          AL_URL="${AL_BASE}/v${VER}/actionlint_${VER}_linux_amd64.tar.gz"
+          mkdir -p /tmp/al
+          curl -sSfL "$AL_URL" | tar -xz -C /tmp/al
+          sudo mv "/tmp/al/actionlint" /usr/local/bin/
+          rm -rf /tmp/al
+
+      - name: Install gitleaks
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          FALLBACK="8.21.2"
+          API_RESPONSE=$(curl -sfH "Authorization: Bearer ${GH_TOKEN}" \
+            https://api.github.com/repos/gitleaks/gitleaks/releases/latest || true)
+          VER=$(printf '%s' "$API_RESPONSE" | jq -e -r '.tag_name' 2>/dev/null || true)
+          if [ -z "$API_RESPONSE" ] || [ -z "$VER" ] || [ "$VER" = "null" ]; then
+            VER="$FALLBACK"
+            echo "gitleaks: using fallback ${FALLBACK}" >&2
+          fi
+          VER="${VER#v}"
+          echo "gitleaks version: ${VER}"
+          GL_BASE="https://github.com/gitleaks/gitleaks/releases/download"
+          GL_URL="${GL_BASE}/v${VER}/gitleaks_${VER}_linux_x64.tar.gz"
+          mkdir -p /tmp/gl
+          curl -sSfL "$GL_URL" | tar -xz -C /tmp/gl
+          sudo mv "/tmp/gl/gitleaks" /usr/local/bin/
+          rm -rf /tmp/gl
+
+      - name: Install hadolint
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          FALLBACK="2.14.0"
+          API_RESPONSE=$(curl -sfH "Authorization: Bearer ${GH_TOKEN}" \
+            https://api.github.com/repos/hadolint/hadolint/releases/latest || true)
+          VER=$(printf '%s' "$API_RESPONSE" | jq -e -r '.tag_name' 2>/dev/null || true)
+          if [ -z "$API_RESPONSE" ] || [ -z "$VER" ] || [ "$VER" = "null" ]; then
+            VER="$FALLBACK"
+            echo "hadolint: using fallback ${FALLBACK}" >&2
+          fi
+          VER="${VER#v}"
+          echo "hadolint version: ${VER}"
+          HL_BASE="https://github.com/hadolint/hadolint/releases/download"
+          HL_URL="${HL_BASE}/v${VER}/hadolint-Linux-x86_64"
+          curl -sSfL -o /tmp/hadolint "$HL_URL"
+          sudo install -m 0755 /tmp/hadolint /usr/local/bin/hadolint
+          rm -f /tmp/hadolint
+
+      - name: Install trivy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          FALLBACK="0.72.0"
+          API_RESPONSE=$(curl -sfH "Authorization: Bearer ${GH_TOKEN}" \
+            https://api.github.com/repos/aquasecurity/trivy/releases/latest || true)
+          VER=$(printf '%s' "$API_RESPONSE" | jq -e -r '.tag_name' 2>/dev/null || true)
+          if [ -z "$API_RESPONSE" ] || [ -z "$VER" ] || [ "$VER" = "null" ]; then
+            VER="$FALLBACK"
+            echo "trivy: using fallback ${FALLBACK}" >&2
+          fi
+          VER="${VER#v}"
+          echo "trivy version: ${VER}"
+          TR_BASE="https://github.com/aquasecurity/trivy/releases/download"
+          TR_URL="${TR_BASE}/v${VER}/trivy_${VER}_Linux-64bit.tar.gz"
+          mkdir -p /tmp/tr
+          curl -sSfL "$TR_URL" | tar -xz -C /tmp/tr
+          sudo mv /tmp/tr/trivy /usr/local/bin/
+          rm -rf /tmp/tr
+
+      - name: Install claude-code / opencode-ai / antigravity-cli
+        run: |
+          npm install -g @anthropic-ai/claude-code@2.1.214 opencode-ai@1.18.3
+          curl -fsSL https://antigravity.google/cli/install.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      # ==========================================================================
+      # Fetch base ref (PR diff scope)
+      # ==========================================================================
+      - name: Fetch base ref (PR diff scope)
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [[ ! "$BASE_REF" =~ ^[A-Za-z0-9/_.-]+$ ]]; then
+            echo "Invalid BASE_REF: $BASE_REF" >&2
+            exit 1
+          fi
+          git fetch origin "$BASE_REF" --depth=1
+
+      - name: Compute changed files (PR diff)
+        id: changed_files
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          files="$(git diff --name-only --diff-filter=d "origin/$BASE_REF...HEAD")"
+          delimiter="CHANGED_FILES_EOF_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          {
+            echo "files<<${delimiter}"
+            printf '%s\n' "$files"
+            echo "${delimiter}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Restore uv package cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key: uv-${{ runner.os }}-py3.12-${{ hashFiles('requirements-dev.txt') }}
+          restore-keys: |
+            uv-${{ runner.os }}-py3.12-
+
+      - name: Install project-specific pip dependencies
+        run: |
+          uv venv "$GITHUB_WORKSPACE/.venv" --python 3.12
+          uv pip install -r requirements-dev.txt
+          echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Restore npm package cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.npm_config_cache }}
+          key: npm-${{ runner.os }}-node22-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-node22-
+
+      - name: Install project-local Node.js packages
+        run: npm ci
+
+      # ==========================================================================
+      # pre-commit 実行ステップ (Gate 2)
+      #
+      # push (main/dev マージ後) は --all-files でフルスキャン (セーフティネット)。
+      # pull_request は --files <PR差分> で差分スコープ実行 (Gate 1 と同一セマンティクス)。
+      #
+      # --files を使うとファイルスコープフック (ruff/mypy/hadolint/trivy-config 等の
+      # pass_filenames: true なフック) は差分ファイルのみ検証する。一方、
+      # always_run: true (semgrep-custom / pyright) はファイル選択に依存せず常時全量実行、
+      # pass_filenames: false (markdownlint-cli2) はマッチするファイル種別が
+      # 1件でも差分に含まれればフック全体を全量実行する (pre-commit の仕様)。
+      # したがって --files への切替でプロジェクト全体のカバレッジは低下しない
+      # (詳細は .pre-commit-config.yaml の各フック定義参照)。
+      #
+      # 例外: PR差分が空 (origin/<base_ref>...HEAD で変更ファイル0件) の場合は
+      # pre-commit 全体をスキップする (always_run フック含む)。これは head == base
+      # を意味するため、base 側で既に検証済みの内容を再スキャンする意義がない。
+      # push (main/dev マージ後) は常に --all-files でセーフティネットが効くため、
+      # 空差分PRでの一時的スキップは許容される。
+      # ==========================================================================
+      - name: Run pre-commit (all files, push to main/dev)
+        if: github.event_name == 'push'
+        run: pre-commit run --all-files
+        env:
+          MYPYPATH: ${{ github.workspace }}/ame_ai_review_system:${{ github.workspace }}/scripts
+          PYTHONPATH: ${{ github.workspace }}/ame_ai_review_system:${{ github.workspace }}/scripts
+
+      - name: Run pre-commit (changed files, PR diff)
+        if: github.event_name == 'pull_request'
+        env:
+          CHANGED_FILES: ${{ steps.changed_files.outputs.files }}
+          MYPYPATH: ${{ github.workspace }}/ame_ai_review_system:${{ github.workspace }}/scripts
+          PYTHONPATH: ${{ github.workspace }}/ame_ai_review_system:${{ github.workspace }}/scripts
+        run: |
+          if [ -z "${CHANGED_FILES// /}" ]; then
+            echo "No changed files detected against base ref; skipping pre-commit."
+            exit 0
+          fi
+          printf '%s\n' "$CHANGED_FILES" | xargs -r -d '\n' pre-commit run --files
+
+      - name: Run unit tests (pytest)
+        run: pytest --tb=short -q
+
+      - name: Run pyright (type check)
+        run: pyright --warnings
+
+  docker-build:
+    name: Docker build verification
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    needs: pre-commit
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build image (verification only, not pushed)
+        run: |
+          docker build \
+            --secret id=user_password,src=<(printf '%s' "ci-build-check") \
+            -t ame-ai-sandbox:ci .

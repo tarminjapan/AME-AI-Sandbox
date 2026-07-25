@@ -1,0 +1,10 @@
+{
+  "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "editorconfig-checker": "^6.0.0",
+    "markdownlint-cli2": "^0.23.1",
+    "textlint": "^14.0.0",
+    "textlint-rule-preset-ja-technical-writing": "^12.0.0"
+  }
+}
