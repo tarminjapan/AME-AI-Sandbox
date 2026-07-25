@@ -169,4 +169,6 @@ check-filenames = true
 # pyright: 静的型検査設定。
 # ---------------------------------------------------------------------------
 [tool.pyright]
+venvPath = "."
+venv = ".venv"
 extraPaths = ["ame_ai_review_system", "scripts"]
