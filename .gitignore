@@ -1,0 +1,51 @@
+# ============================================================
+#  AME-AI-Sandbox .gitignore
+#  ソースのみ追跡し、ビルド生成物・キャッシュ・一時ファイル・利用者固有データは除外する。
+# ============================================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# --- ツール／キャッシュ ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Node（dev ツールのみ）---
+node_modules/
+
+# --- OS / 同期クライアント ---
+Thumbs.db
+ehthumbs.db
+desktop.ini
+*.tmp
+.DS_Store
+
+# --- エディタ ---
+.vscode/
+.idea/
+*.swp
+*~
+
+# --- ユーザー固有設定 (Git 管理対象外) ---
+config.user.json
+.env
+
+# --- Claude Code のローカル個人設定 (プロジェクト共有設定 .claude/settings.json は追跡する) ---
+.claude/settings.local.json
+
+# --- AI エージェント / ツール状態 (セッション・利用者固有) ---
+.serena/
+AGENTS.md
+.tokensave/
