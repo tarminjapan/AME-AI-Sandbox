@@ -1,0 +1,57 @@
+---
+# AME-AI-Sandbox Docker Compose 設定
+#
+# 設定値はファイルから読み込む（Issue #3）:
+#   - 環境変数      : .env（git 管理対象外）
+#   - sudo パスワード: secrets/user_password.txt（git 管理対象外）
+#
+# 初回セットアップは README.md の「初回セットアップ」を参照。
+
+services:
+  sandbox:
+    container_name: ame-ai-sandbox
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # sudo パスワードは BuildKit secret で渡す（docker history に残さない）
+      secrets:
+        - user_password
+      args:
+        # ホストの UID/GID に合わせる場合は .env で上書き
+        USER_UID: ${USER_UID:-1000}
+        USER_GID: ${USER_GID:-1000}
+    image: ame-ai-sandbox:latest
+    # env_file で一括注入。GH_TOKEN / GIT_AUTHOR_NAME 等
+    env_file:
+      - .env
+    environment:
+      # env_file 経由で漏れたホストパスをコンテナ環境から隠す（コンテナでは未使用）
+      SSH_HOST_DIR: ""
+    volumes:
+      # SSH 鍵（読み取り専用 bind-mount）。場所は .env の SSH_HOST_DIR で必須指定。
+      # entrypoint.sh がコンテナ内の ~/.ssh へコピーする。
+      - ${SSH_HOST_DIR:?required in .env}:/etc/ssh-host:ro
+      # 作業ディレクトリ
+      - ./:/workspace
+      # 各 CLI の認証状態・設定を永続化（任意）
+      - ame-claude-config:/home/ai-developer/.claude
+      - ame-opencode-config:/home/ai-developer/.config/opencode
+      - ame-opencode-data:/home/ai-developer/.local/share/opencode
+      - ame-local-bin:/home/ai-developer/.local/bin
+    working_dir: /workspace
+    # 対話シェルを維持
+    tty: true
+    stdin_open: true
+    # コンテナが対話シェル退出で終了しないよう永続化
+    command: sleep infinity
+
+# BuildKit secret（sudo パスワード）。実ファイルは git 管理対象外。
+secrets:
+  user_password:
+    file: ./secrets/user_password.txt
+
+volumes:
+  ame-claude-config:
+  ame-opencode-config:
+  ame-opencode-data:
+  ame-local-bin:

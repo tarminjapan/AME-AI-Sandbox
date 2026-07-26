@@ -42,6 +42,9 @@ desktop.ini
 config.user.json
 .env
 
+# --- Docker ビルドシークレット（実ファイルのみ除外、.example は追跡） ---
+secrets/user_password.txt
+
 # --- Claude Code のローカル個人設定 (プロジェクト共有設定 .claude/settings.json は追跡する) ---
 .claude/settings.local.json
 
