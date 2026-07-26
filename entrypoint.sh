@@ -22,8 +22,8 @@ if ! grep -qs '^github\.com ' "${SSH_DIR}/known_hosts" 2>/dev/null; then
 fi
 
 # --- git global identity ---------------------------------------------------
-git config --global user.name  "${GIT_AUTHOR_NAME:-taito}"
-git config --global user.email "${GIT_AUTHOR_EMAIL:-taito@example.com}"
+git config --global user.name  "${GIT_AUTHOR_NAME:-your-name}"
+git config --global user.email "${GIT_AUTHOR_EMAIL:-you@example.com}"
 
 # --- git safe.directory (workspace is bind-mounted, may be owned by host root) ---
 git config --global --add safe.directory '*'
