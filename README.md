@@ -63,6 +63,40 @@ docker compose exec sandbox bash
 docker compose down
 ```
 
+## コンテナ内 Web サービスへのホスト側からのアクセス
+
+コンテナ内で `npm run dev` 等により Web サービスを起動した場合、ホスト側のブラウザから
+アクセスできるようにする方法は 2 通りあり、`.env` の設定だけで切り替えられます。
+
+### 既定（bridge モード・特定ポートのみ公開）
+
+`.env` の `DOCKER_NETWORK_MODE=bridge`（既定値）のとき、`DEV_PORT_1`〜`DEV_PORT_5`
+で指定したポートのみ `127.0.0.1` に公開されます。既定のポート番号は以下のとおりです。
+
+- `DEV_PORT_1=5173`（Vite）
+- `DEV_PORT_2=3000`（Next.js・React・Node）
+- `DEV_PORT_3=8000`（Django・FastAPI）
+- `DEV_PORT_4=8080`（汎用）
+- `DEV_PORT_5=5000`（Flask）
+
+別のポートを使いたい場合は該当する `DEV_PORT_*` を書き換えてから、以下を実行してください。
+
+```bash
+docker compose up -d
+```
+
+### host モード（任意ポートに即アクセス）
+
+`.env` の `DOCKER_NETWORK_MODE=host` に変更して `docker compose up -d`
+すると、コンテナがホストのネットワークを直接共有します。`DEV_PORT_*`
+の設定に関わらず、コンテナ内で起動した任意の Web サーバーに `http://localhost:<port>/` で到達できます。
+
+> host モードは Docker Desktop（Mac/Windows）のバックエンドによっては未対応・要設定の場合があります。
+> その場合は bridge モードのまま `DEV_PORT_*` に必要なポートを追加してください。
+> また host モードでは起動ログに
+> `WARNING: Published ports are discarded when using host network mode` と表示されますが、
+> `ports` 設定が無視されているだけで想定内の警告です。
+
 ## 各CLIの使い方
 
 | CLI | 起動コマンド | 認証方法 |

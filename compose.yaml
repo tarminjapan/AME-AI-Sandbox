@@ -27,6 +27,19 @@ services:
     environment:
       # env_file 経由で漏れたホストパスをコンテナ環境から隠す（コンテナでは未使用）
       SSH_HOST_DIR: ""
+    # コンテナ内 Web サービスをホストから閲覧可能にする（Issue #11）。
+    # bridge（既定）: 下の ports で列挙したポートのみ 127.0.0.1 に公開。
+    # host          : ports は Docker Compose が warning 付きで無視し、
+    #                 コンテナがホストのネットワークを直接共有する（任意ポートに即アクセス可）。
+    network_mode: ${DOCKER_NETWORK_MODE:-bridge}
+    ports:
+      # LAN 全体には公開せず、ホスト自身からのみ到達可能にするため 127.0.0.1 にバインドする。
+      # ポート番号は .env の DEV_PORT_* で管理する（compose.yaml にハードコードしない）。
+      - "127.0.0.1:${DEV_PORT_1:-5173}:${DEV_PORT_1:-5173}"
+      - "127.0.0.1:${DEV_PORT_2:-3000}:${DEV_PORT_2:-3000}"
+      - "127.0.0.1:${DEV_PORT_3:-8000}:${DEV_PORT_3:-8000}"
+      - "127.0.0.1:${DEV_PORT_4:-8080}:${DEV_PORT_4:-8080}"
+      - "127.0.0.1:${DEV_PORT_5:-5000}:${DEV_PORT_5:-5000}"
     volumes:
       # SSH 鍵（読み取り専用 bind-mount）。場所は .env の SSH_HOST_DIR で必須指定。
       # entrypoint.sh がコンテナ内の ~/.ssh へコピーする。

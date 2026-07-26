@@ -30,6 +30,10 @@ feature/* | bug/* | chore/*  ──►  main
   への直接書き込みは禁止。
 - Claude Code / OpenCode / Antigravity CLI いずれかに固有の実装を追加する場合、他の2つのCLIの動作を壊さないこと。
   `entrypoint.sh` は特定CLIの分岐を持たず、各CLIが自身の環境変数を直接読む設計を維持する。
+- **コンテナ内 Web サービスの公開設定はハードコードしない。** `compose.yaml` の `network_mode` /
+  `ports` は `.env` の `DOCKER_NETWORK_MODE`（`bridge` | `host`）と `DEV_PORT_*`
+  で切り替える（Issue #11）。`ports` は必ず `127.0.0.1`
+  にバインドし、LAN へ誤公開しないこと。
 
 ## PR レビュー対応フロー（必須）
 
