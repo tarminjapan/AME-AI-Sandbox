@@ -56,6 +56,7 @@ docker compose build
 docker compose up -d
 
 # コンテナに入る（対話シェル）
+# 初期ディレクトリは HOME (/home/ai-developer)。リポジトリ本体は /workspace にマウントされている。
 docker compose exec sandbox bash
 
 # 終了時: コンテナを停止

@@ -184,7 +184,9 @@ HEALTHCHECK --interval=5m --timeout=10s --start-period=30s --retries=3 \
     CMD command -v claude >/dev/null && command -v opencode >/dev/null && command -v gh >/dev/null || exit 1
 
 # --- Working directory -----------------------------------------------------
-WORKDIR /workspace
+# 初期ディレクトリは HOME にする（リポジトリ本体は /workspace に bind-mount される。
+# Issue #6）
+WORKDIR "/home/${USERNAME}"
 
 # --- Entrypoint ------------------------------------------------------------
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

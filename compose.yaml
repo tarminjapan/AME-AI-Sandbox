@@ -38,7 +38,10 @@ services:
       - ame-opencode-config:/home/ai-developer/.config/opencode
       - ame-opencode-data:/home/ai-developer/.local/share/opencode
       - ame-local-bin:/home/ai-developer/.local/bin
-    working_dir: /workspace
+    # 初期ディレクトリは HOME にする（リポジトリ本体は /workspace に bind-mount される。
+    # Issue #6）。上の volumes 定義と同様に USERNAME=ai-developer をハードコードしているため、
+    # Dockerfile の USERNAME ARG を変更する場合はここも合わせて更新すること。
+    working_dir: /home/ai-developer
     # 対話シェルを維持
     tty: true
     stdin_open: true
