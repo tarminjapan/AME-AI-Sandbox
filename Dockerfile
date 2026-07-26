@@ -149,7 +149,16 @@ RUN --mount=type=secret,id=user_password,required=true \
     fi && \
     echo "${USERNAME}:${USER_PASSWORD}" | chpasswd && \
     echo "${USERNAME} ALL=(ALL) ALL" >> /etc/sudoers && \
-    chown -R "${USER_UID}:${USER_GID}" /opt/venv /opt/uv /opt/npm-global
+    chown -R "${USER_UID}:${USER_GID}" /opt/venv /opt/uv /opt/npm-global && \
+    # compose.yaml が名前付きボリュームをマウントするパスを事前に作成・chown しておく。
+    # 存在しないパスに名前付きボリュームを新規マウントすると、Docker は
+    # マウントポイントを root:root で作成してしまい、非rootユーザーが書き込めず
+    # opencode/claude が EACCES で起動失敗する (Issue #7)。
+    mkdir -p "/home/${USERNAME}/.claude" \
+    "/home/${USERNAME}/.config/opencode" \
+    "/home/${USERNAME}/.local/share/opencode" \
+    "/home/${USERNAME}/.local/bin" && \
+    chown -R "${USER_UID}:${USER_GID}" "/home/${USERNAME}"
 
 # --- Entrypoint script -----------------------------------------------------
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
