@@ -5,9 +5,9 @@ Ubuntu 24.04 LTS をベースに、Python 3.14 (uv 管理) ・ Node.js v24 ・ G
 
 設定値はすべてファイルから読み込むため、コマンドの引数で都度渡す必要はありません（Issue #3）。
 
-- 環境変数（`GH_TOKEN`, `GIT_AUTHOR_NAME` 等） → `.env`
+- 環境変数（`GH_TOKEN`, `GIT_AUTHOR_NAME`, `SSH_HOST_DIR` 等） → `.env`
 - sudo パスワード（BuildKit secret） → `secrets/user_password.txt`
-- SSH 鍵 → `~/.ssh`（既定の bind-mount）
+- SSH 鍵 → `.env` の `SSH_HOST_DIR` で指定したホストディレクトリ
 
 ## 初回セットアップ
 
@@ -15,8 +15,15 @@ Ubuntu 24.04 LTS をベースに、Python 3.14 (uv 管理) ・ Node.js v24 ・ G
 
 ```bash
 cp .env.example .env
-# .env を編集して GH_TOKEN / GIT_AUTHOR_NAME / GIT_AUTHOR_EMAIL を埋める
+# .env を編集して以下を埋める:
+#   - GH_TOKEN            : GitHub PAT（gh / git HTTPS 認証）
+#   - GIT_AUTHOR_NAME     : git commit の著者名
+#   - GIT_AUTHOR_EMAIL    : git commit のメールアドレス
+#   - SSH_HOST_DIR        : ホスト側の SSH 鍵ディレクトリ（絶対パス必須）
 ```
+
+> `SSH_HOST_DIR` は必須です。未設定の場合、`docker compose` が起動時にエラーで停止します。
+> `~` を指定すると Compose 変数展開で解釈されない場合があるため、`/home/<user>/.ssh` のような絶対パスを推奨します。
 
 ### 2. sudo パスワードファイルの作成
 
@@ -69,7 +76,7 @@ API キーは `.env` に記載すれば、コンテナ起動直後から非対�
 ## セキュリティに関する注記
 
 - **SSH 鍵はビルド時にイメージへ焼き込まない。** 代わりに、実行時はホストの鍵を読み取り専用で bind-mount する。
-  `entrypoint.sh` がコンテナ起動時に書き込み可能な `~/.ssh` へコピーする。
+  マウント元は `.env` の `SSH_HOST_DIR` で指定し、`entrypoint.sh` がコンテナ起動時に書き込み可能な `~/.ssh` へコピーする。
   イメージレイヤーやコミット履歴に鍵 material は残らない。
 - GitHub のホスト鍵は `ssh-keyscan` で `known_hosts` に登録しており、
   `StrictHostKeyChecking no` のような検証無効化は行っていません。

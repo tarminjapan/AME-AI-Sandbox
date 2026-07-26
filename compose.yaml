@@ -24,9 +24,13 @@ services:
     # env_file で一括注入。GH_TOKEN / GIT_AUTHOR_NAME 等
     env_file:
       - .env
+    environment:
+      # env_file 経由で漏れたホストパスをコンテナ環境から隠す（コンテナでは未使用）
+      SSH_HOST_DIR: ""
     volumes:
-      # SSH 鍵（読み取り専用 bind-mount。entrypoint.sh が ~/.ssh へコピー）
-      - ~/.ssh:/etc/ssh-host:ro
+      # SSH 鍵（読み取り専用 bind-mount）。場所は .env の SSH_HOST_DIR で必須指定。
+      # entrypoint.sh がコンテナ内の ~/.ssh へコピーする。
+      - ${SSH_HOST_DIR:?required in .env}:/etc/ssh-host:ro
       # 作業ディレクトリ
       - ./:/workspace
       # 各 CLI の認証状態・設定を永続化（任意）
