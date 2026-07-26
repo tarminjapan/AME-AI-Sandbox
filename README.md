@@ -71,8 +71,13 @@ docker compose down
 ### 既定（bridge モード・特定ポートのみ公開）
 
 `.env` の `DOCKER_NETWORK_MODE=bridge`（既定値）のとき、`DEV_PORT_1`〜`DEV_PORT_5`
-で指定したポートのみ `127.0.0.1` に公開されます（既定: `5173` Vite / `3000` Next.js・React・Node /
-`8000` Django・FastAPI / `8080` 汎用 / `5000` Flask）。
+で指定したポートのみ `127.0.0.1` に公開されます。既定のポート番号は以下のとおりです。
+
+- `DEV_PORT_1=5173`（Vite）
+- `DEV_PORT_2=3000`（Next.js・React・Node）
+- `DEV_PORT_3=8000`（Django・FastAPI）
+- `DEV_PORT_4=8080`（汎用）
+- `DEV_PORT_5=5000`（Flask）
 
 別のポートを使いたい場合は該当する `DEV_PORT_*` を書き換えてから、以下を実行してください。
 
