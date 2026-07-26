@@ -186,7 +186,7 @@ HEALTHCHECK --interval=5m --timeout=10s --start-period=30s --retries=3 \
 # --- Working directory -----------------------------------------------------
 # 初期ディレクトリは HOME にする（リポジトリ本体は /workspace に bind-mount される。
 # Issue #6）
-WORKDIR "/home/${USERNAME}"
+WORKDIR /home/${USERNAME}
 
 # --- Entrypoint ------------------------------------------------------------
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
