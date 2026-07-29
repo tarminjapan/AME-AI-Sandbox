@@ -218,13 +218,17 @@ def _run_static_checks(staged_files: list[str]) -> tuple[bool, str]:
     Returns (True, "") if all checks pass or no checks are available.
     Returns (False, message) if any check fails.
     """
-    py_files = [f for f in staged_files if f.endswith((".py", ".pyi"))]
-
     proj_root = pathlib.Path(
         precommit_state.run_git(["rev-parse", "--show-toplevel"]).strip(),
     )
     if not proj_root.is_dir():
         proj_root = pathlib.Path(__file__).resolve().parent.parent
+
+    # Symlinks (e.g. .claude/skills/* pointing into .agents/skills/*) aren't
+    # real file content; semgrep errors out when given one as a scan root.
+    scannable_files = [f for f in staged_files if not (proj_root / f).is_symlink()]
+
+    py_files = [f for f in scannable_files if f.endswith((".py", ".pyi"))]
 
     checks: list[tuple[str, list[str]]] = []
     if py_files:
@@ -238,7 +242,7 @@ def _run_static_checks(staged_files: list[str]) -> tuple[bool, str]:
         ])
 
     ts_files = [
-        f for f in staged_files if f.endswith((".ts", ".tsx", ".js", ".mjs", ".cjs"))
+        f for f in scannable_files if f.endswith((".ts", ".tsx", ".js", ".mjs", ".cjs"))
     ]
     if ts_files:
         checks.extend(review_config.get_ts_checks(ts_files))
@@ -255,7 +259,7 @@ def _run_static_checks(staged_files: list[str]) -> tuple[bool, str]:
                         "--config",
                         str(semgrep_config),
                         "--error",
-                        *staged_files,
+                        *scannable_files,
                     ],
                 ),
             )
@@ -265,7 +269,7 @@ def _run_static_checks(staged_files: list[str]) -> tuple[bool, str]:
             file=sys.stderr,
         )
 
-    md_files = [f for f in staged_files if f.endswith((".md", ".markdown"))]
+    md_files = [f for f in scannable_files if f.endswith((".md", ".markdown"))]
     if md_files:
         checks.append(
             (

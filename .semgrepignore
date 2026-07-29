@@ -3,3 +3,8 @@
 # ame-no-ambiguous-unicode rule (self-referential detection).
 
 ame_ai_review_system/.semgrep/rules.yml
+
+# .claude/skills/* are symlinks to .agents/skills/* (the canonical copy).
+# Semgrep refuses to use a symlink as a scanning root, so scan the target
+# under .agents/skills/ instead and skip the symlink itself here.
+.claude/skills/
