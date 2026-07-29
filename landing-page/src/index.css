@@ -1,20 +1,24 @@
 @import 'tailwindcss';
 
+/* SettingsProvider が <html> に .dark を付け外しして手動テーマ切替を行うため、
+   Tailwind の dark: variant を prefers-color-scheme ではなくクラス判定に切り替える。 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --font-ui-ja-sans: 'Noto Sans JP', sans-serif;
+  --font-ui-ja-serif: 'Noto Serif JP', serif;
+  --font-ui-en-sans: 'Noto Sans', sans-serif;
+  --font-ui-en-serif: 'Noto Serif', serif;
   --font-mono: 'Noto Sans Mono', 'Noto Sans JP', monospace;
-  --color-primary: #005b99;
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-primary: #3b82c4;
-  }
+  /* SettingsProvider が locale/fontSet に応じて上書きする。 */
+  --font-ui-current: var(--font-ui-ja-sans);
+  --color-primary: #005b99;
 }
 
 body {
   margin: 0;
-  font-family: var(--font-ui-ja-sans);
+  font-family: var(--font-ui-current);
   letter-spacing: 0.05em;
 }
 

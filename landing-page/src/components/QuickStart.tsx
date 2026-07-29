@@ -1,17 +1,16 @@
-const STEPS = [
-  { label: '.env 作成', command: 'cp .env.example .env' },
-  { label: 'sudo パスワードファイル作成', command: 'cp secrets/user_password.txt.example secrets/user_password.txt' },
-  { label: 'イメージをビルド', command: 'docker compose build' },
-  { label: 'コンテナを起動', command: 'docker compose up -d' },
-  { label: 'コンテナに入る', command: 'docker compose exec sandbox bash' },
-]
+import { useSettings } from '../settings/SettingsContext'
+import { TerminalIcon } from './icons/TerminalIcon'
 
 export function QuickStart() {
+  const { t } = useSettings()
   return (
     <section id="quick-start" className="mx-auto max-w-4xl px-6 py-16">
-      <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">クイックスタート</h2>
+      <div className="flex items-center gap-2">
+        <TerminalIcon className="h-5 w-5 text-[var(--color-primary)]" />
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{t.quickStart.heading}</h2>
+      </div>
       <ol className="mt-6 flex flex-col gap-4">
-        {STEPS.map((step, index) => (
+        {t.quickStart.steps.map((step, index) => (
           <li key={step.command} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-6">
             <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
               {index + 1}. {step.label}

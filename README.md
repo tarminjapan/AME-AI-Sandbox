@@ -1,5 +1,11 @@
 # AME-AI-Sandbox
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="landing-page/public/header-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="landing-page/public/header-light.svg">
+  <img alt="AME-AI-Sandbox" src="landing-page/public/header-light.svg">
+</picture>
+
 Claude Code / OpenCode / Antigravity CLI をコンテナ内で動かすための開発用 Docker サンドボックスです。
 Ubuntu 24.04 LTS をベースに、Python 3.14 (uv 管理) ・ Node.js v24 ・ Go ・ GitHub CLI (`gh`) を含みます。
 

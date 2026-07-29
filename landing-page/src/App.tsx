@@ -1,6 +1,7 @@
 import { Header } from './components/Header'
 import { Hero } from './components/Hero'
 import { ProblemStatement } from './components/ProblemStatement'
+import { Architecture } from './components/Architecture'
 import { TechStack } from './components/TechStack'
 import { Features } from './components/Features'
 import { QuickStart } from './components/QuickStart'
@@ -16,6 +17,7 @@ function App() {
       <main>
         <Hero />
         <ProblemStatement />
+        <Architecture />
         <TechStack />
         <Features />
         <QuickStart />
