@@ -5,14 +5,21 @@
 # 同一のフックを実行する。
 #
 # ランナー: GitHub-hosted ubuntu-latest。
-# ツールチェーン (Python 3.12 / Node 22 / uv / shellcheck / actionlint /
+# ツールチェーン (Python 3.12 / Node 24 / uv / shellcheck / actionlint /
 # gitleaks / hadolint / trivy / claude-code / opencode-ai / antigravity-cli)
 # は steps: で明示的にセットアップする。
 #
 # 出自: tarminjapan/AME-AI-Review-System の ci.yml から移植。
-# frontend(landing-page) 向けの vitest ステップは、本リポジトリに対象コードが
-# ないため除外した。hadolint / trivy のインストールステップと、
-# main/dev への push 時のみ実行する docker-build ジョブを新規追加している。
+# hadolint / trivy のインストールステップと、main/dev への push
+# 時のみ実行する docker-build ジョブを新規追加している。
+#
+# landing-page/ (React + TypeScript + Tailwind, Issue #13) の検証は
+# 独立した npm プロジェクトのビルド + lint (tsc / oxlint) のみを CI で実行する。
+# vitest / stylelint / prettier / sqlfluff は、テスト・カスタム CSS・SQL
+# いずれも対象が存在しないため見送っている（landing-page/package.json 参照）。
+# ローカル pre-commit の Gate 1 (ame_ai_review_system.precommit_review) 側の
+# TS/JS 静的解析 (review_config.get_ts_checks) は未活性のまま
+# (docstring 参照)。ここでの CI ビルド + lint が唯一の安全網になる。
 
 name: CI
 
@@ -35,6 +42,7 @@ jobs:
     env:
       UV_CACHE_DIR: ${{ github.workspace }}/.cache/uv
       npm_config_cache: ${{ github.workspace }}/.cache/npm
+      NPM_CONFIG_CACHE_LANDING_PAGE: ${{ github.workspace }}/.cache/npm-landing-page
 
     steps:
       - name: Checkout
@@ -50,10 +58,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Setup Node.js 22
+      - name: Setup Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "24"
           cache: npm
 
       - name: Setup uv
@@ -224,12 +232,33 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.npm_config_cache }}
-          key: npm-${{ runner.os }}-node22-${{ hashFiles('package-lock.json') }}
+          key: npm-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
           restore-keys: |
-            npm-${{ runner.os }}-node22-
+            npm-${{ runner.os }}-node24-
 
       - name: Install project-local Node.js packages
         run: npm ci
+
+      - name: Restore landing-page npm package cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.NPM_CONFIG_CACHE_LANDING_PAGE }}
+          key: >-
+            npm-${{ runner.os }}-node24-landing-page-${{
+            hashFiles('landing-page/package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-node24-landing-page-
+
+      - name: Install landing-page Node.js packages
+        env:
+          npm_config_cache: ${{ env.NPM_CONFIG_CACHE_LANDING_PAGE }}
+        run: npm ci --prefix landing-page
+
+      - name: Build landing-page (tsc + vite build)
+        run: npm run build --prefix landing-page
+
+      - name: Lint landing-page (oxlint)
+        run: npm run lint --prefix landing-page
 
       # ==========================================================================
       # pre-commit 実行ステップ (Gate 2)

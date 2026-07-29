@@ -1,0 +1,65 @@
+---
+# GitHub Pages デプロイ — landing-page/ (React + TypeScript + Tailwind, Issue #13)
+#
+# main への push (landing-page/ 配下の変更時のみ) をトリガーに、
+# landing-page/ をビルドして GitHub Pages へデプロイする。
+# デプロイ先: https://tarminjapan.github.io/AME-AI-Sandbox/
+# (リポジトリ設定で Pages の Source を "GitHub Actions" にしておく必要がある)
+
+name: Deploy landing-page to GitHub Pages
+
+"on":
+  push:
+    branches:
+      - main
+    paths:
+      - landing-page/**
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build landing-page
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: landing-page/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --prefix landing-page
+
+      - name: Build
+        run: npm run build --prefix landing-page
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: landing-page/dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

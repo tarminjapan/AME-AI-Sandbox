@@ -244,6 +244,8 @@ repos:
         entry: check-json
         language: system
         types: [json]
+        # tsconfig*.json は TypeScript の JSONC 仕様でコメント/末尾カンマを許容するため対象外。
+        exclude: ^landing-page/tsconfig.*\.json$
 
       - id: check-merge-conflict
         name: check merge conflict
