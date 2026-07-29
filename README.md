@@ -1,5 +1,11 @@
 # AME-AI-Sandbox
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="landing-page/public/header-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="landing-page/public/header-light.svg">
+  <img alt="AME-AI-Sandbox" src="landing-page/public/header-light.svg">
+</picture>
+
 Claude Code / OpenCode / Antigravity CLI をコンテナ内で動かすための開発用 Docker サンドボックスです。
 Ubuntu 24.04 LTS をベースに、Python 3.14 (uv 管理) ・ Node.js v24 ・ Go ・ GitHub CLI (`gh`) を含みます。
 
@@ -124,3 +130,15 @@ API キーは `.env` に記載すれば、コンテナ起動直後から非対�
 
 本リポジトリには二段ゲート方式の AI コードレビュー基盤（`ame_ai_review_system/`）が組み込まれています。
 詳細は [`ame_ai_review_system/README.md`](ame_ai_review_system/README.md) を参照してください。
+
+## 紹介用ランディングページ（landing-page/）
+
+本リポジトリを紹介する React + TypeScript + Tailwind CSS 製のランディングページです。
+`main` への push で GitHub Pages（<https://tarminjapan.github.io/AME-AI-Sandbox/>）へ自動デプロイされます。
+
+```bash
+cd landing-page
+npm install
+npm run dev      # 開発サーバー
+npm run build    # 本番ビルド (dist/)
+```

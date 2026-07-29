@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 260" width="1200" height="260">
+  <title>AME-AI-Sandbox</title>
+
+  <!-- ターミナルウィンドウ -->
+  <rect x="60" y="50" width="160" height="160" rx="16" fill="none" stroke="#F3F4F6" stroke-width="3" />
+  <line x1="60" y1="90" x2="220" y2="90" stroke="#F3F4F6" stroke-width="3" />
+  <circle cx="80" cy="70" r="4" fill="#F3F4F6" />
+  <circle cx="94" cy="70" r="4" fill="#F3F4F6" />
+  <circle cx="108" cy="70" r="4" fill="#F3F4F6" />
+
+  <path
+    d="M80 130 L96 146 L80 162"
+    fill="none"
+    stroke="#3B82C4"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <rect x="108" y="140" width="60" height="10" rx="5" fill="#3B82C4" />
+
+  <!-- セキュリティ・バッジ -->
+  <g transform="translate(178,150)">
+    <path
+      d="M24 0 L48 8 L48 28 C48 44 36 55 24 60 C12 55 0 44 0 28 L0 8 Z"
+      fill="none"
+      stroke="#3B82C4"
+      stroke-width="3"
+      stroke-linejoin="round"
+    />
+    <polyline
+      points="13,29 21,37 36,20"
+      fill="none"
+      stroke="#3B82C4"
+      stroke-width="4"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </g>
+
+  <!-- ワードマーク -->
+  <text x="264" y="128" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="56" font-weight="700" fill="#F3F4F6">
+    AME-AI-Sandbox
+  </text>
+  <text x="264" y="164" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="24" font-weight="400" fill="#9CA3AF">
+    AI coding CLI sandbox — secure, reproducible
+  </text>
+</svg>
